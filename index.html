@@ -216,6 +216,13 @@
 <blockquote>
 <p>#systemctl restart docker.service</p>
 </blockquote>
+<h3 id="遇到问题"><a href="#遇到问题" class="headerlink" title="遇到问题"></a>遇到问题</h3><p>启动容器报错：starting container process caused “process_linux.go:297: copying bootstrap data to pipe caused &quot;write init-p: broken pipe&quot;“: unknown.</p>
+<p>可能是Docker发布了新版本CE 18.06.2版本，此版本与Ubuntu3.xx内核不兼容。产生如上问题</p>
+<p>解决方法：</p>
+<ul>
+<li>更新kernel版本：<code>sudo apt-get install linux-generic-lts-xenial</code>（没用过）<br>升级之后版本<br>Linux panda 4.4.0-148-generic #174~14.04.1-Ubuntu<br>升级之后运行一切正常。</li>
+<li>将docker降为更低版本（重新安装）</li>
+</ul>
 
                         
                     </div>
