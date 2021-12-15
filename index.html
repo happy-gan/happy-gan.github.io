@@ -165,6 +165,79 @@
                 <div class="kratos-status-inner">
                     <div class="kratos-status-content">
                         
+                            <h2 id="详解利用Dockerfile构建mysql镜像并实现数据的初始化及权限设置"><a href="#详解利用Dockerfile构建mysql镜像并实现数据的初始化及权限设置" class="headerlink" title="详解利用Dockerfile构建mysql镜像并实现数据的初始化及权限设置"></a>详解利用Dockerfile构建mysql镜像并实现数据的初始化及权限设置</h2><p><strong>本文提要</strong></p>
+<p>本文目的不仅仅是创建一个<a target="_blank" rel="noopener" href="https://www.yisu.com/mysql/">MySQL</a>的镜像，而是在其基础上再实现启动过程中自动导入数据及数据库用户的权限设置，并且在新创建出来的容器里自动启动MySQL服务接受外部连接，主要是通过Dockerfile和shell脚本实现这一过程。</p>
+<p><strong>搭建步骤</strong></p>
+<p>1、首先创建Dckerfile：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">FROM mysql:5.7</span><br><span class="line"></span><br><span class="line">#设置免密登录</span><br><span class="line">ENV MYSQL_ALLOW_EMPTY_PASSWORD yes</span><br><span class="line"></span><br><span class="line">#将所需文件放到容器中</span><br><span class="line">COPY setup.sh /mysql/setup.sh</span><br><span class="line">COPY schema.sql /mysql/schema.sql</span><br><span class="line">COPY privileges.sql /mysql/privileges.sql</span><br><span class="line"></span><br><span class="line">#设置容器启动时执行的命令</span><br><span class="line">CMD [&quot;sh&quot;, &quot;/mysql/setup.sh&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>2、编写容器启动脚本setup.sh：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">set -e</span><br><span class="line"></span><br><span class="line">#查看mysql服务的状态，方便调试，这条语句可以删除</span><br><span class="line">echo `service mysql status`</span><br><span class="line"></span><br><span class="line">echo &#x27;1.启动mysql....&#x27;</span><br><span class="line">#启动mysql</span><br><span class="line">service mysql start</span><br><span class="line">sleep 3</span><br><span class="line">echo `service mysql status`</span><br><span class="line"></span><br><span class="line">echo &#x27;2.开始导入数据....&#x27;</span><br><span class="line">#导入数据</span><br><span class="line">mysql &lt; /mysql/schema.sql</span><br><span class="line">echo &#x27;3.导入数据完毕....&#x27;</span><br><span class="line"></span><br><span class="line">sleep 3</span><br><span class="line">echo `service mysql status`</span><br><span class="line"></span><br><span class="line">#重新设置mysql密码</span><br><span class="line">echo &#x27;4.开始修改密码....&#x27;</span><br><span class="line">mysql &lt; /mysql/privileges.sql</span><br><span class="line">echo &#x27;5.修改密码完毕....&#x27;</span><br><span class="line"></span><br><span class="line">#sleep 3</span><br><span class="line">echo `service mysql status`</span><br><span class="line">echo `mysql容器启动完毕,且数据导入成功`</span><br><span class="line"></span><br><span class="line">tail -f /dev/null</span><br></pre></td></tr></table></figure>
+
+<p>这里是先导入数据，然后才是设置用户和权限，是因为mysql容器一开始为免密登录，Dockerfile中有如下设置：<code>ENV MYSQL_ALLOW_EMPTY_PASSWORD yes</code>,此时执行导入数据命令不需要登录验证操作，如果是先执行权限操作，那么导入数据则需要登录验证，整个过程就麻烦了许多。</p>
+<p>3、需要导入数据的mysql脚本命令schema.sql：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">-- 创建数据库</span><br><span class="line">create database `docker_mysql` default character set utf8 collate utf8_general_ci;</span><br><span class="line"></span><br><span class="line">use docker_mysql;</span><br><span class="line"></span><br><span class="line">-- 建表</span><br><span class="line">DROP TABLE IF EXISTS `user`;</span><br><span class="line"></span><br><span class="line">CREATE TABLE `user` (</span><br><span class="line"> `id` bigint(20) NOT NULL,</span><br><span class="line"> `created_at` bigint(40) DEFAULT NULL,</span><br><span class="line"> `last_modified` bigint(40) DEFAULT NULL,</span><br><span class="line"> `email` varchar(255) DEFAULT NULL,</span><br><span class="line"> `first_name` varchar(255) DEFAULT NULL,</span><br><span class="line"> `last_name` varchar(255) DEFAULT NULL,</span><br><span class="line"> `username` varchar(255) DEFAULT NULL,</span><br><span class="line"> PRIMARY KEY (`id`)</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=latin1;</span><br><span class="line"></span><br><span class="line">-- 插入数据</span><br><span class="line">INSERT INTO `user` (`id`, `created_at`, `last_modified`, `email`, `first_name`, `last_name`, `username`)</span><br><span class="line">VALUES</span><br><span class="line">  (0,1490257904,1490257904,&#x27;john.doe@example.com&#x27;,&#x27;John&#x27;,&#x27;Doe&#x27;,&#x27;user&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>因为是测试，所以随便写了一个建表语句，如果是真实项目肯定不止这一张表，直接将建表语句覆盖过来就好。</p>
+<p>4、mysql权限设置命令privileges.sql：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">select host, user from user;</span><br><span class="line">-- 因为mysql版本是5.7，因此新建用户为如下命令：</span><br><span class="line">create user docker identified by &#x27;123456&#x27;;</span><br><span class="line">-- 将docker_mysql数据库的权限授权给创建的docker用户，密码为123456：</span><br><span class="line">grant all on docker_mysql.* to docker@&#x27;%&#x27; identified by &#x27;123456&#x27; with grant option;</span><br><span class="line">-- 这一条命令一定要有：</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<p>5、创建镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t 13/docker-mysql .</span><br></pre></td></tr></table></figure>
+
+<p>docker build 为创建镜像命令，名称为13/docker-mysql，’.’表示当前目录，即Dockerfile文件所在的目录，创建过程如下：</p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211215161542384.png" alt="image-20211215161542384"></p>
+<p>执行docker images查看该镜像是否存在于镜像列表中：</p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211215161652051.png" alt="image-20211215161652051"></p>
+<p>创建成功。</p>
+<p>6、启动容器（二选一）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -p 13306:3306 13/docker-mysql</span><br><span class="line">docker run -d --name test -p 13306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql/docker-mysql</span><br></pre></td></tr></table></figure>
+
+<p>启动容器，并将端口映射到本地的13306端口。</p>
+<p>容器启动成功。</p>
+<p>查看容器的日志记录，启动过程与启动脚本setup.sh中所规范的步骤一致，数据导入和权限设置成功：</p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211215162257578.png" alt="image-20211215162257578"></p>
+
+                        
+                    </div>
+                </div>
+            </div>
+            
+                <footer class="kratos-post-meta-new">
+                    <span class="pull-left">
+                        <a><i class="fa fa-calendar"></i></a><a>2021-12-15</a>
+                        
+                        
+                            <!-- 当前仅支持valine/waline自带的统计功能 -->
+                            
+                        
+                        
+                            <!-- 当前仅支持waline自带的统计功能 -->
+                            
+                        
+                    </span>
+                    
+                    
+                        <span class="pull-right">
+                            <a class="read-more" href="/2021/12/15/docker%E4%BD%BF%E7%94%A8%E6%96%87%E4%BB%B6%E5%88%9B%E5%BB%BA%E9%95%9C%E5%83%8F/" title="留言">留言<i class="fa fa-chevron-circle-right"></i></a>
+                        </span>
+                    
+
+                </footer>
+            
+        </article>
+    
+
+    
+    
+        <article class="kratos-hentry kratos-entry-border-new clearfix">
+            <div class="kratos-status">
+                
+                    <i class="fa fa-refresh"></i>
+                
+                <div class="kratos-status-inner">
+                    <div class="kratos-status-content">
+                        
                             <h1 id="docker-ce安装"><a href="#docker-ce安装" class="headerlink" title="docker-ce安装"></a>docker-ce安装</h1><p>官方文档：<a target="_blank" rel="noopener" href="https://docs.docker.com/install/linux/docker-ce/centos/">https://docs.docker.com/install/linux/docker-ce/centos/</a></p>
 <h4 id="卸载旧版本（没用）："><a href="#卸载旧版本（没用）：" class="headerlink" title="卸载旧版本（没用）："></a>卸载旧版本（没用）：</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">yum remove docker \</span><br><span class="line">docker-client \</span><br><span class="line">docker-client-latest \</span><br><span class="line">docker-common \</span><br><span class="line">docker-latest \</span><br><span class="line">docker-latest-logrotate \</span><br><span class="line">docker-logrotate \</span><br><span class="line">docker-engine</span><br></pre></td></tr></table></figure>
 
@@ -550,6 +623,9 @@ in:name: 名称 stars:&gt;4000 pushed: &gt;2020-01-01 language:java fork:&gt;100
   <div class="tab-content">
       <ul class="list-group">
         
+        
+          
+          
         
           
           
