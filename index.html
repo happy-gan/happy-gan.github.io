@@ -177,13 +177,13 @@
 <h2 id="2-安装docker"><a href="#2-安装docker" class="headerlink" title="2. 安装docker"></a>2. 安装docker</h2><p>推荐使用安装脚本安装</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">curl -fsSL https://get.docker.com -o get-docker.sh	#下载docker引擎脚本文件</span><br><span class="line"></span><br><span class="line">sh get-docker.sh --mirror Aliyun	#执行脚本，通过脚本下载，并设置阿里云镜像加速</span><br><span class="line"></span><br><span class="line">systemctl enable docker	#将docker加入开机自启动的列表</span><br><span class="line">systemctl start docker	#启动docker服务(restart重启	status状态	stop停止)</span><br><span class="line"></span><br><span class="line">#推荐将当前用户加入Docker组</span><br><span class="line">sudo groupadd docker	#创建dokcer组</span><br><span class="line">usermod -aG docker $USER	#将当前用户加入docker组，修改过程中自动创建docker</span><br><span class="line"></span><br><span class="line">#查看docker引擎</span><br><span class="line">docker info</span><br><span class="line">docker version</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://happy-gan.github.io/images/images/image-20211223085833521.png" alt="image-20211223085833521"></p>
-<h2 id="3-配置阿里云镜像加速"><a href="#3-配置阿里云镜像加速" class="headerlink" title="3.配置阿里云镜像加速"></a>3.配置阿里云镜像加速</h2><p><img src="https://happy-gan.github.io/images/images/image-20211223101021752.png" alt="image-20211223101021752"></p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211223085833521.png"></p>
+<h2 id="3-配置阿里云镜像加速"><a href="#3-配置阿里云镜像加速" class="headerlink" title="3.配置阿里云镜像加速"></a>3.配置阿里云镜像加速</h2><p><img src="https://happy-gan.github.io/images/images/image-20211223101021752.png"></p>
 <h2 id="docker-compose学习"><a href="#docker-compose学习" class="headerlink" title="docker compose学习"></a>docker compose学习</h2><p>模板命令</p>
-<p><img src="https://happy-gan.github.io/images/images/image-20211224101241514.png" alt="image-20211224101241514"></p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211224101241514.png"></p>
 <p>具体使用</p>
-<p><img src="https://happy-gan.github.io/images/images/image-20211224101343685.png" alt="image-20211224101343685"></p>
-<p><img src="https://happy-gan.github.io/images/images/image-20211224101423807.png" alt="image-20211224101423807"></p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211224101343685.png"></p>
+<p><img src="https://happy-gan.github.io/images/images/image-20211224101423807.png"></p>
 
                         
                     </div>
